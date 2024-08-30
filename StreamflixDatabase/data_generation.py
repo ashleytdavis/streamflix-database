@@ -10,9 +10,11 @@ from functools import wraps
 from datetime import datetime, timedelta
 import pandas as pd
 import mysql.connector
-import random
+from dotenv import load_dotenv
+import random, os
 
 fake = Faker()
+load_dotenv()
 
 # Decorator to ensure database connection stays open and
 # only rolls back when error occurs
@@ -20,10 +22,10 @@ def with_db_connection(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         conn = mysql.connector.connect(
-            host="localhost",
-            port=3307,
-            user="root",
-            password="******", 
+            host=os.getenv('MYSQL_HOST'),
+            port=os.getenv('MYSQL_PORT'),
+            user=os.getenv('MYSQL_USER'),
+            password=os.getenv('MYSQL_PASSWORD'), 
             database="Streamflix"
         )
         cursor = conn.cursor()
@@ -44,6 +46,7 @@ def with_db_connection(func):
 # Read the CSV data from the file into a DataFrame
 def csv_to_dataframe(file_path):
     df = pd.read_csv(file_path)
+    df = df.dropna()  # Exclude rows with missing values in any column
     return df
 
 
@@ -61,7 +64,7 @@ def initialize_database(conn, cursor):
             conn.rollback()
             return
     
-    print("-->  Database schema initialized.")
+    print("-->  Database schema initialized")
 
 
 @with_db_connection
@@ -169,7 +172,7 @@ def insert_movie_genre_actor_director_data(conn, cursor):
                     genre_id = cursor.lastrowid
 
                 cursor.execute('''
-                    INSERT INTO Movie_Genre (movie_id, genre_id)
+                    INSERT INTO Content_Genre (content_id, genre_id)
                     VALUES (%s, %s)
                 ''', (movie_id, genre_id))
                 conn.commit()
@@ -191,11 +194,11 @@ def insert_movie_genre_actor_director_data(conn, cursor):
                 director_id = cursor.lastrowid
             
             cursor.execute('''
-                SELECT 1 FROM Movie_Director WHERE movie_id = %s AND director_id = %s
+                SELECT 1 FROM Content_Director WHERE content_id = %s AND director_id = %s
             ''', (movie_id, director_id))
             if cursor.fetchone() is None:
                 cursor.execute('''
-                    INSERT INTO Movie_Director (movie_id, director_id)
+                    INSERT INTO Content_Director (content_id, director_id)
                     VALUES (%s, %s)
                 ''', (movie_id, director_id))
                 conn.commit()
@@ -220,11 +223,11 @@ def insert_movie_genre_actor_director_data(conn, cursor):
                     actor_id = cursor.lastrowid
 
                 cursor.execute('''
-                    SELECT 1 FROM Movie_Actor WHERE movie_id = %s AND actor_id = %s
+                    SELECT 1 FROM Content_Actor WHERE content_id = %s AND actor_id = %s
                 ''', (movie_id, actor_id))
                 if cursor.fetchone() is None:
                     cursor.execute('''
-                        INSERT INTO Movie_Actor (movie_id, actor_id)
+                        INSERT INTO Content_Actor (content_id, actor_id)
                         VALUES (%s, %s)
                     ''', (movie_id, actor_id))
                     conn.commit()
@@ -234,20 +237,23 @@ def insert_movie_genre_actor_director_data(conn, cursor):
 
 @with_db_connection
 def insert_series_data(conn, cursor):
-    series_df = pd.read_csv('StreamflixDatabase/assets/imdb_top_250_series.csv')
+    series_df = csv_to_dataframe('StreamflixDatabase/assets/netflix_top_series.csv')
+    series_df = series_df[series_df['type'] == 'TV Show']
     
     for i, row in series_df.iterrows():
-        title = row['Title']
-        description = fake.paragraph()
-        release_year = row['Year'][:4]
-        thumbnail = fake.pystr(max_chars=10)
-        country = fake.country()
+        title = row['title']
+        description = row['description']
+        release_year = str(int(row['release_year']))
+        country = row['country']
         language = fake.language_name()
+        genres = row['listed_in'].split(', ')
+        director_name = row['director']
+        actors = row['cast'].split(', ')
 
         cursor.execute('''
             INSERT INTO Video_Content (title, thumbnail, country, description, release_year, language)
             VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (title, thumbnail, country, description, release_year, language))
+        ''', (title, fake.pystr(max_chars=10), country, description, release_year, language))
         conn.commit()
 
         content_id = cursor.lastrowid
@@ -259,15 +265,88 @@ def insert_series_data(conn, cursor):
         conn.commit()
 
         series_id = cursor.lastrowid
+        
+        for genre in genres:
+            cursor.execute('SELECT genre_id FROM Genre WHERE name = %s', (genre,))
+            genre_row = cursor.fetchone()
+            
+            if genre_row:
+                genre_id = genre_row[0]
+            else:
+                cursor.execute('INSERT INTO Genre (name) VALUES (%s)', (genre,))
+                conn.commit()
+                genre_id = cursor.lastrowid
+            
+            cursor.execute('''
+                INSERT INTO Content_Genre (content_id, genre_id)
+                VALUES (%s, %s)
+            ''', (content_id, genre_id))
+            conn.commit()
+            
+            # Insert Director
+            if pd.notna(director_name):
+                cursor.execute('SELECT director_id FROM Director WHERE name = %s', (director_name,))
+                director_row = cursor.fetchone()
 
-        total_episodes = int(row['Total_episodes'].split()[0])
+                if director_row:
+                    director_id = director_row[0]
+                else:
+                    cursor.execute('''
+                        INSERT INTO Director (name, date_of_birth, biography, content_id)
+                        VALUES (%s, %s, %s, %s)
+                    ''', (director_name, fake.date_of_birth(), fake.paragraph(), content_id))
+                    conn.commit()
+                    director_id = cursor.lastrowid
+
+                # Check for existing Content_Director entry
+                cursor.execute('''
+                    SELECT 1 FROM Content_Director WHERE content_id = %s AND director_id = %s
+                ''', (content_id, director_id))
+                if not cursor.fetchone():
+                    cursor.execute('''
+                        INSERT INTO Content_Director (content_id, director_id)
+                        VALUES (%s, %s)
+                    ''', (content_id, director_id))
+                    conn.commit()
+
+            # Insert Actors
+            processed_actors = set()
+            for actor_name in actors:
+                if pd.notna(actor_name) and actor_name not in processed_actors:
+                    processed_actors.add(actor_name)
+                    
+                    cursor.execute('SELECT actor_id FROM Actor WHERE name = %s', (actor_name,))
+                    actor_row = cursor.fetchone()
+
+                    if actor_row:
+                        actor_id = actor_row[0]
+                    else:
+                        cursor.execute('''
+                            INSERT INTO Actor (name, date_of_birth, gender, biography, content_id)
+                            VALUES (%s, %s, %s, %s, %s)
+                        ''', (actor_name, fake.date_of_birth(), fake.passport_gender(), fake.paragraph(), content_id))
+                        conn.commit()
+                        actor_id = cursor.lastrowid
+
+                    # Check for existing Content_Actor entry
+                    cursor.execute('''
+                        SELECT 1 FROM Content_Actor WHERE content_id = %s AND actor_id = %s
+                    ''', (content_id, actor_id))
+                    if not cursor.fetchone():
+                        cursor.execute('''
+                            INSERT INTO Content_Actor (content_id, actor_id)
+                            VALUES (%s, %s)
+                        ''', (content_id, actor_id))
+                        conn.commit()
+
+        total_episodes = random.randint(1, 50) 
         insert_season_data(conn, cursor, series_id, total_episodes)
         
     print("-->  Series, Season, and Episode Data Generated and Populated")
     
     
 def insert_season_data(conn, cursor, series_id, total_episodes):
-    num_seasons = random.randint(1, 5) 
+    num_seasons = random.randint(1, 5)
     episodes_per_season = max(1, total_episodes // num_seasons)
     
     for i in range(num_seasons):
@@ -275,7 +354,6 @@ def insert_season_data(conn, cursor, series_id, total_episodes):
             INSERT INTO Season (series_id)
             VALUES (%s)
         ''', (series_id,))
-        
         conn.commit()
         season_id = cursor.lastrowid
 
@@ -296,35 +374,39 @@ def insert_episode_data(conn, cursor, season_id, episodes_per_season):
 
 @with_db_connection
 def insert_review_data(conn, cursor):
+    df = csv_to_dataframe('StreamflixDatabase/assets/generic_movie_series_reviews.csv')
+
+    df['Date Posted'] = pd.to_datetime(df['Date Posted'], format='%m/%d/%Y').dt.strftime('%Y-%m-%d')
+    
     cursor.execute('SELECT content_id FROM Video_Content')
     content_ids = [row[0] for row in cursor.fetchall()]
 
     cursor.execute('SELECT user_id FROM User')
     user_ids = [row[0] for row in cursor.fetchall()]
 
-    for i in range(200):
-        review_text = fake.paragraph()
-        user_id = random.choice(user_ids)
-        content_id = random.choice(content_ids)
-        num_stars = random.randint(1,5)
+    for content_id in content_ids:
+        num_reviews = random.randint(1, 30)
         
-        cursor.execute('''
-            INSERT INTO Review (review_content, stars, user_id)
-            VALUES (%s, %s, %s)
-        ''', (review_text, num_stars, user_id))
+        sampled_reviews = df.sample(n=num_reviews, replace=True).reset_index(drop=True)
         
-        conn.commit()
-        review_id = cursor.lastrowid
+        for i, row in sampled_reviews.iterrows():
+            user_id = random.choice(user_ids)
+            
+            cursor.execute('''
+                INSERT INTO Review (review_content, stars, user_id, date_posted)
+                VALUES (%s, %s, %s, %s)
+            ''', (row['Review'], row['Stars'], user_id, row['Date Posted']))
+            
+            review_id = cursor.lastrowid
 
-        cursor.execute('''
-            INSERT INTO Content_Review (content_id, review_id)
-            VALUES (%s, %s)
-        ''', (content_id, review_id))
-        
-        conn.commit()
+            cursor.execute('''
+                INSERT INTO Content_Review (content_id, review_id)
+                VALUES (%s, %s)
+            ''', (content_id, review_id))
 
     print("-->  Reviews Data Generated and Populated")
 
+    
 
 @with_db_connection
 def insert_my_list_data(conn, cursor):
@@ -373,7 +455,7 @@ def insert_user_metrics_data(conn, cursor):
     cursor.execute('SELECT content_id FROM Video_Content')
     content_ids = cursor.fetchall()
 
-    for i in range(400):
+    for i in range(800):
         user_id = random.choice(user_ids)[0]
         content_id = random.choice(content_ids)[0]
         start_time = fake.date_time_between(start_date='-1y', end_date='now')
@@ -387,7 +469,7 @@ def insert_user_metrics_data(conn, cursor):
         ''', (start_time, end_time, duration, completed, content_id, user_id))
         conn.commit()
 
-    print("-->  User List(s) Data Generated and Populated")
+    print("-->  User Metrics Data Generated and Populated")
           
 
 def main():  

@@ -70,7 +70,7 @@ CREATE TABLE `Device`
 CREATE TABLE `Video_Content`
 (
     content_id INT AUTO_INCREMENT,
-    title VARCHAR(100) NOT NULL,
+    title VARCHAR(300) NOT NULL,
     thumbnail VARCHAR(10),
     country varchar(100),
     description LONGTEXT,
@@ -114,7 +114,7 @@ CREATE TABLE `Season`
 CREATE TABLE `Episode`
 (
     episode_id INT AUTO_INCREMENT,
-    title VARCHAR(100) NOT NULL,
+    title VARCHAR(150) NOT NULL,
     duration INT,
     season_id INT,
     PRIMARY KEY (episode_id),
@@ -126,7 +126,7 @@ CREATE TABLE `Episode`
 CREATE TABLE `Actor`
 (
     actor_id INT AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(150) NOT NULL,
     date_of_birth DATE NOT NULL,
     gender VARCHAR(10),
     biography LONGTEXT,
@@ -137,7 +137,7 @@ CREATE TABLE `Actor`
 CREATE TABLE `Director`
 (
     director_id INT AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(150) NOT NULL,
     date_of_birth DATE NOT NULL,
     biography LONGTEXT NOT NULL,
     content_id INT,
@@ -170,40 +170,40 @@ CREATE TABLE `Content_Review`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Movie_Genre`
+CREATE TABLE `Content_Genre`
 (
-    movie_id INT,
+    content_id INT,
     genre_id INT,
-    PRIMARY KEY (movie_id, genre_id),
-    FOREIGN KEY (movie_id) REFERENCES `Movie`(movie_id)
+    PRIMARY KEY (content_id, genre_id),
+    FOREIGN KEY (content_id) REFERENCES `Video_Content`(content_id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE ,
+        ON UPDATE CASCADE,
     FOREIGN KEY (genre_id) REFERENCES `Genre`(genre_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Movie_Actor`
+CREATE TABLE `Content_Actor`
 (
-    movie_id INT,
+    content_id INT,
     actor_id INT,
-    PRIMARY KEY (movie_id, actor_id),
-    FOREIGN KEY (movie_id) REFERENCES `Movie`(movie_id)
+    PRIMARY KEY (content_id, actor_id),
+    FOREIGN KEY (content_id) REFERENCES `Video_Content`(content_id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE ,
+        ON UPDATE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES `Actor`(actor_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Movie_Director`
+CREATE TABLE `Content_Director`
 (
-    movie_id INT,
+    content_id INT,
     director_id INT,
-    PRIMARY KEY (movie_id, director_id),
-    FOREIGN KEY (movie_id) REFERENCES `Movie`(movie_id)
+    PRIMARY KEY (content_id, director_id),
+     FOREIGN KEY (content_id) REFERENCES `Video_Content`(content_id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE ,
+        ON UPDATE CASCADE,
     FOREIGN KEY (director_id) REFERENCES `Director`(director_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE

@@ -86,7 +86,7 @@ def check_video_content_and_related(conn, cursor):
         print(genre)
     
     # Check Movie_Genre table
-    cursor.execute("SELECT * FROM Movie_Genre LIMIT 5;")
+    cursor.execute("SELECT * FROM Content_Genre LIMIT 5;")
     movie_genres = cursor.fetchall()
     print("\nMovie-Genre Associations:")
     for movie_genre in movie_genres:
@@ -110,14 +110,14 @@ def check_actors_and_directors(conn, cursor):
         print(director)
 
     # Check Movie_Actor table
-    cursor.execute("SELECT * FROM Movie_Actor LIMIT 5;")
+    cursor.execute("SELECT * FROM Content_Actor LIMIT 5;")
     movie_actors = cursor.fetchall()
     print("\nMovie-Actor Associations:")
     for movie_actor in movie_actors:
         print(movie_actor)
     
     # Check Movie_Director table
-    cursor.execute("SELECT * FROM Movie_Director LIMIT 5;")
+    cursor.execute("SELECT * FROM Content_Director LIMIT 5;")
     movie_directors = cursor.fetchall()
     print("\nMovie-Director Associations:")
     for movie_director in movie_directors:
@@ -165,6 +165,11 @@ def check_user_metrics(conn, cursor):
     print("User Metrics:")
     for metric in metrics:
         print(metric)
+        
+# Function to check that relationships are developed correctly
+# This query should show that the series "Show, Blood & Water"
+# starting Ama Qamata, Khosi Ngema, etc. is a Mystery, Drama Series
+# s2,TV Show,Blood & Water,,"Ama Qamata, Khosi Ngema, Gail Mabalane, Thabang Molaba, Dillon Windvogel, Natasha Thahane, Arno Greeff, Xolile Tshabalala, Getmore Sithole, Cindy Mahlangu, Ryle De Morny, Greteli Fincham, Sello Maake Ka-Ncube, Odwa Gwanya, Mekaila Mathys, Sandi Schultz, Duane Williams, Shamilla Miller, Patrick Mofokeng",South Africa,"September 24, 2021",2021,TV-MA,2 Seasons,"International TV Shows, TV Dramas, TV Mysteries","After crossing paths at a party, a Cape Town teen sets out to prove whether a private-school swimming star is her sister who was abducted at birth."
 
 def main():
    check_users()
