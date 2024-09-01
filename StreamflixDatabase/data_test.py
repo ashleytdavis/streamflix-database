@@ -7,184 +7,127 @@
 
 from data_generation import with_db_connection
 
-# Function to check if users were inserted correctly
+# According to our data, we have 40 unique genres
 @with_db_connection
-def check_users(conn, cursor):
-    cursor.execute("SELECT * FROM User LIMIT 5;")
-    users = cursor.fetchall()
-    print("Users:")
-    for user in users:
-        print(user)
-        
-# Function to check if profiles were inserted correctly
-@with_db_connection
-def check_profiles(conn, cursor):
-    cursor.execute("SELECT * FROM Profile LIMIT 5;")
-    profiles = cursor.fetchall()
-    print("Profiles:")
-    for profile in profiles:
-        print(profile)
-        
-# Function to check if devices were inserted correctly
-@with_db_connection
-def check_devices(conn, cursor):
-    cursor.execute("SELECT * FROM Device LIMIT 5;")
-    devices = cursor.fetchall()
-    print("Devices:")
-    for device in devices:
-        print(device)
-        
-# Function to check if series were inserted correctly
-@with_db_connection
-def check_series(conn, cursor):
-    cursor.execute("SELECT * FROM Series LIMIT 5;")
-    series = cursor.fetchall()
-    print("Series:")
-    for s in series:
-        print(s)
-
-# Function to check if seasons were inserted correctly
-@with_db_connection
-def check_seasons(conn, cursor):
-    cursor.execute("SELECT * FROM Season LIMIT 5;")
-    seasons = cursor.fetchall()
-    print("Seasons:")
-    for season in seasons:
-        print(season)
-        
-# Function to check if seasons were inserted correctly
-@with_db_connection
-def check_episodes(conn, cursor):
-    cursor.execute("SELECT * FROM Episode LIMIT 5;")
-    episodes = cursor.fetchall()
-    print("Episodes:")
-    for episode in episodes:
-        print(episode)
-        
-# Function to check video content, movies, and genres
-@with_db_connection
-def check_video_content_and_related(conn, cursor):
-    # Check Video Content table
-    cursor.execute("SELECT * FROM Video_Content LIMIT 5;")
-    videos = cursor.fetchall()
-    print("Video Content:")
-    for video in videos:
-        print(video)
-    
-    # Check Movie table
-    cursor.execute("SELECT * FROM Movie LIMIT 5;")
-    movies = cursor.fetchall()
-    print("\nMovies:")
-    for movie in movies:
-        print(movie)
-    
-    # Check Genre table
-    cursor.execute("SELECT * FROM Genre LIMIT 5;")
+def test1(conn, cursor):
+    cursor.execute("SELECT * FROM Genre;")
     genres = cursor.fetchall()
-    print("\nGenres:")
-    for genre in genres:
-        print(genre)
+    if len(genres) == 40:
+        print("Test 1: \033[32mPASS\033[0m")
+        return
+    print("Test 1: \033[31mFAIL\033[0m")
     
-    # Check Movie_Genre table
-    cursor.execute("SELECT * FROM Content_Genre LIMIT 5;")
-    movie_genres = cursor.fetchall()
-    print("\nMovie-Genre Associations:")
-    for movie_genre in movie_genres:
-        print(movie_genre)
-        
-# Function to check if actors and directors were inserted correctly
-@with_db_connection
-def check_actors_and_directors(conn, cursor):
-    # Check Actor table
-    cursor.execute("SELECT * FROM Actor LIMIT 5;")
-    actors = cursor.fetchall()
-    print("\nActors:")
-    for actor in actors:
-        print(actor)
-
-    # Check Director table
-    cursor.execute("SELECT * FROM Director LIMIT 5;")
-    directors = cursor.fetchall()
-    print("\nDirectors:")
-    for director in directors:
-        print(director)
-
-    # Check Movie_Actor table
-    cursor.execute("SELECT * FROM Content_Actor LIMIT 5;")
-    movie_actors = cursor.fetchall()
-    print("\nMovie-Actor Associations:")
-    for movie_actor in movie_actors:
-        print(movie_actor)
     
-    # Check Movie_Director table
-    cursor.execute("SELECT * FROM Content_Director LIMIT 5;")
-    movie_directors = cursor.fetchall()
-    print("\nMovie-Director Associations:")
-    for movie_director in movie_directors:
-        print(movie_director)
-        
-# Function to check if reviews were inserted correctly
+# According to our data, Jennifer Aniston has acted in 1 Series and 2 Movies
 @with_db_connection
-def check_reviews_and_content_reviews(conn, cursor):
-    # Check Review table
-    cursor.execute("SELECT * FROM Review LIMIT 5;")
-    reviews = cursor.fetchall()
-    print("Reviews:")
-    for review in reviews:
-        print(review)
+def test2(conn, cursor):
+    cursor.execute('''
+                   SELECT vc.title 
+                   FROM Actor a 
+                   JOIN Content_Actor ca ON a.actor_id = ca.actor_id 
+                   JOIN Video_Content vc ON ca.content_id = vc.content_id 
+                   WHERE a.name = 'Jennifer Aniston';
+                   ''')
+    content = cursor.fetchall()
+    if len(content) == 3:
+        print("Test 2: \033[32mPASS\033[0m")
+        return
+    print("Test 2: \033[31mFAIL\033[0m")
     
-    # Check Content_Review table
-    cursor.execute("SELECT * FROM Content_Review LIMIT 5;")
-    content_reviews = cursor.fetchall()
-    print("\nContent-Review Associations:")
-    for content_review in content_reviews:
-        print(content_review)
-        
-   # Function to check if lists and listed content were inserted correctly
-@with_db_connection
-def check_lists_and_listed_content(conn, cursor):
-    # Check My_List table
-    cursor.execute("SELECT * FROM My_List LIMIT 5;")
-    lists = cursor.fetchall()
-    print("My Lists:")
-    for list in lists:
-        print(list)
 
-    # Check Listed_Content table
-    cursor.execute("SELECT * FROM Listed_Content LIMIT 5;")
-    listed_contents = cursor.fetchall()
-    print("\nListed Content:")
-    for listed_content in listed_contents:
-        print(listed_content)
-
-# Function to check user metrics were inserted correctly
+# According to our data, David Fincher has directed 8 movies
 @with_db_connection
-def check_user_metrics(conn, cursor):
-    cursor.execute("SELECT * FROM User_Metrics LIMIT 5;")
-    metrics = cursor.fetchall()
-    print("User Metrics:")
-    for metric in metrics:
-        print(metric)
-        
-# Function to check that relationships are developed correctly
-# This query should show that the series "Show, Blood & Water"
-# starting Ama Qamata, Khosi Ngema, etc. is a Mystery, Drama Series
-# s2,TV Show,Blood & Water,,"Ama Qamata, Khosi Ngema, Gail Mabalane, Thabang Molaba, Dillon Windvogel, Natasha Thahane, Arno Greeff, Xolile Tshabalala, Getmore Sithole, Cindy Mahlangu, Ryle De Morny, Greteli Fincham, Sello Maake Ka-Ncube, Odwa Gwanya, Mekaila Mathys, Sandi Schultz, Duane Williams, Shamilla Miller, Patrick Mofokeng",South Africa,"September 24, 2021",2021,TV-MA,2 Seasons,"International TV Shows, TV Dramas, TV Mysteries","After crossing paths at a party, a Cape Town teen sets out to prove whether a private-school swimming star is her sister who was abducted at birth."
+def test3(conn, cursor):
+    cursor.execute('''
+                   SELECT vc.title 
+                   FROM Director d 
+                   JOIN Content_Director cd ON d.director_id = cd.director_id 
+                   JOIN Video_Content vc ON cd.content_id = vc.content_id 
+                   WHERE d.name = 'David Fincher';
+                   ''')
+    content = cursor.fetchall()
+    if len(content) == 8:
+        print("Test 3: \033[32mPASS\033[0m")
+        return
+    print("Test 3: \033[31mFAIL\033[0m")
+    
+
+# Based on the data design, no user should have more than 4 devices linked to their account
+@with_db_connection
+def test4(conn, cursor):
+    cursor.execute('''
+                    SELECT user_id, COUNT(device_id) AS device_count
+                    FROM Device
+                    GROUP BY user_id
+                    HAVING COUNT(device_id) > 4;
+                   ''')
+    content = cursor.fetchall()
+    if not content:
+        print("Test 4: \033[32mPASS\033[0m")
+        return
+    print("Test 4: \033[31mFAIL\033[0m")
+    
+    
+# Ensuring there are no duplicate video_content entries
+@with_db_connection
+def test5(conn, cursor):
+    cursor.execute('''
+                    SELECT title, COUNT(*)
+                    FROM Video_Content
+                    GROUP BY title
+                    HAVING COUNT(*) > 1;
+                   ''')
+    content = cursor.fetchall()
+    if not content:
+        print("Test 5: \033[32mPASS\033[0m")
+        return
+    print("Test 5: \033[31mFAIL\033[0m")
+
+
+# Ensuring the watch duration of a user metric entry aligns with the start and end time
+@with_db_connection
+def test6(conn, cursor):
+    cursor.execute('''
+                    SELECT metric_id, TIMESTAMPDIFF(SECOND, start_time, end_time) AS calculated_duration, duration
+                    FROM User_Metrics
+                    WHERE TIMESTAMPDIFF(SECOND, start_time, end_time) != duration;
+                   ''')
+    content = cursor.fetchall()
+    if not content:
+        print("Test 6: \033[32mPASS\033[0m")
+        return
+    print("Test 6: \033[31mFAIL\033[0m")
+
+
+# There is one director who has produced at least 1 movie and 1 series
+# Seeing what directors have produced at least 1 movie and 1 series
+@with_db_connection
+def test7(conn, cursor):
+    cursor.execute('''
+                    SELECT DISTINCT d.name, d.director_id
+                    FROM Director d
+                    JOIN Content_Director cd_movie ON d.director_id = cd_movie.director_id
+                    JOIN Movie m ON cd_movie.content_id = m.content_id
+                    JOIN Content_Director cd_series ON d.director_id = cd_series.director_id
+                    JOIN Series s ON cd_series.content_id = s.content_id;
+                   ''')
+    content = cursor.fetchall()
+    if len(content) == 1:
+        print("Test 7: \033[32mPASS\033[0m")
+        return
+    print("Test 7: \033[31mFAIL\033[0m")
+
 
 def main():
-   check_users()
-   check_profiles()
-   check_devices()
-   check_series()
-   check_seasons()
-   check_episodes()
-   check_video_content_and_related()
-   check_actors_and_directors()
-   check_reviews_and_content_reviews()
-   check_lists_and_listed_content()
-   check_user_metrics()
+    test1()
+    test2()
+    test3()
+    test4()
+    test5()
+    test6()
+    test7()
 
 
 if __name__ == "__main__":
-   print('Testing Creation of Generated Data...\n\n')
+   print('Testing Creation of Generated Data...\n')
    main()

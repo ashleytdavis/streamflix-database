@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import mysql.connector
 from dotenv import load_dotenv
-import random, os
+import random, os, re
 
 fake = Faker()
 load_dotenv()
@@ -46,7 +46,7 @@ def with_db_connection(func):
 # Read the CSV data from the file into a DataFrame
 def csv_to_dataframe(file_path):
     df = pd.read_csv(file_path)
-    df = df.dropna()  # Exclude rows with missing values in any column
+    df = df.dropna()
     return df
 
 
@@ -265,23 +265,26 @@ def insert_series_data(conn, cursor):
         conn.commit()
 
         series_id = cursor.lastrowid
+        pattern = re.compile(r'\b(TV|Series|Shows)\b', re.IGNORECASE)
         
         for genre in genres:
-            cursor.execute('SELECT genre_id FROM Genre WHERE name = %s', (genre,))
+            cleaned_genre = pattern.sub('', genre).strip()
+            cursor.execute('SELECT genre_id FROM Genre WHERE name = %s', (cleaned_genre,))
             genre_row = cursor.fetchone()
             
-            if genre_row:
-                genre_id = genre_row[0]
-            else:
-                cursor.execute('INSERT INTO Genre (name) VALUES (%s)', (genre,))
+            if cleaned_genre:
+                if genre_row:
+                    genre_id = genre_row[0]
+                else:
+                    cursor.execute('INSERT INTO Genre (name) VALUES (%s)', (cleaned_genre,))
+                    conn.commit()
+                    genre_id = cursor.lastrowid
+                
+                cursor.execute('''
+                    INSERT INTO Content_Genre (content_id, genre_id)
+                    VALUES (%s, %s)
+                ''', (content_id, genre_id))
                 conn.commit()
-                genre_id = cursor.lastrowid
-            
-            cursor.execute('''
-                INSERT INTO Content_Genre (content_id, genre_id)
-                VALUES (%s, %s)
-            ''', (content_id, genre_id))
-            conn.commit()
             
             # Insert Director
             if pd.notna(director_name):
@@ -459,8 +462,8 @@ def insert_user_metrics_data(conn, cursor):
         user_id = random.choice(user_ids)[0]
         content_id = random.choice(content_ids)[0]
         start_time = fake.date_time_between(start_date='-1y', end_date='now')
-        duration = random.randint(10, 240)
-        end_time = start_time + timedelta(minutes=duration)
+        duration = random.randint(10 * 60, 240 * 60)
+        end_time = start_time + timedelta(seconds=duration)
         completed = random.choice([True, False])
 
         cursor.execute('''
