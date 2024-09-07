@@ -100,7 +100,6 @@ def test6(conn, cursor):
 
 
 # There is one director who has produced at least 1 movie and 1 series
-# Seeing what directors have produced at least 1 movie and 1 series
 @with_db_connection
 def test7(conn, cursor):
     cursor.execute('''

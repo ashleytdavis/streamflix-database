@@ -1,4 +1,4 @@
-# Streamflix Database
+<img src="StreamflixDatabase\assets\streamflix-logo.png" alt="Streamflix Logo" />
 
 ## Overview
 The **Streamflix Database** is designed to act as a media streaming platform, structued to handle users, content (including movies and series), and basic associated interactions (leaving reviews, ratings, etc.). The database schema includes tables for managing user information, video content, and various relationships among them.
