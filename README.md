@@ -30,7 +30,7 @@ MYSQL_PASSWORD=
 
 4. **Generate the Data**: Run the `data_generation.py` file to insert data into the datababase:
   ```
-    python StreamflixDatabase/data_gerneration.py
+    python StreamflixDatabase/data_generation.py
   ```
 
 5. (Optional) **Test your generation**: To ensure the associations between entities were created correctly, you can run the following command, which runs the test file:
