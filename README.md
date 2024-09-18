@@ -29,6 +29,8 @@ MYSQL_PASSWORD=
 ```
 
 4. **Generate the Data**: Run the `data_generation.py` file to insert data into the datababase:
+
+     _**note:** you must have your docker mysql instance running on the port you specified in your `.env` before running this script!_
   ```
     python StreamflixDatabase/data_generation.py
   ```
@@ -37,3 +39,8 @@ MYSQL_PASSWORD=
   ```
     python StreamflixDatabase/data_test.py
   ```
+
+## Change Log
+### 9/18/2024
+#### Fixed
+- Passed database creation from sql script to data generation script - eliminating unknown database error
