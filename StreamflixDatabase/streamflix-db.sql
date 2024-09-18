@@ -6,25 +6,13 @@
    Authors: Ashley Davis, Nicole Contreras, Khanh Nguyen, and Sai Kumar Reddy
 ********************************************************************************/
 
-
-/*******************************************************************************
-   Drop database if it exists
-********************************************************************************/
-DROP DATABASE IF EXISTS `Streamflix`;
-
-/*******************************************************************************
-   Create database
-********************************************************************************/
-CREATE DATABASE `Streamflix`;
-
-
 USE `Streamflix`;
 
 
 /*******************************************************************************
    Create Tables
 ********************************************************************************/
-CREATE TABLE `User`
+CREATE TABLE IF NOT EXISTS `User`
 (
     user_id INT,
     username VARCHAR(30) NOT NULL,
@@ -38,14 +26,16 @@ CREATE TABLE `User`
     PRIMARY KEY (user_id)
 );
 
-CREATE TABLE `Genre`
+
+CREATE TABLE IF NOT EXISTS `Genre`
 (
     genre_id INT AUTO_INCREMENT,
     name VARCHAR(30) NOT NULL,
     PRIMARY KEY (genre_id)
 );
 
-CREATE TABLE `Profile`
+
+CREATE TABLE IF NOT EXISTS `Profile`
 (
     profile_id INT AUTO_INCREMENT,
     name VARCHAR(100),
@@ -56,7 +46,8 @@ CREATE TABLE `Profile`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Device`
+
+CREATE TABLE IF NOT EXISTS `Device`
 (
     device_id INT AUTO_INCREMENT,
     ip_address VARCHAR(18),
@@ -67,7 +58,8 @@ CREATE TABLE `Device`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Video_Content`
+
+CREATE TABLE IF NOT EXISTS `Video_Content`
 (
     content_id INT AUTO_INCREMENT,
     title VARCHAR(300) NOT NULL,
@@ -80,7 +72,8 @@ CREATE TABLE `Video_Content`
     INDEX(title)
 );
 
-CREATE TABLE `Movie`
+
+CREATE TABLE IF NOT EXISTS `Movie`
 (
     movie_id INT AUTO_INCREMENT,
     duration INT,
@@ -91,7 +84,8 @@ CREATE TABLE `Movie`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Series`
+
+CREATE TABLE IF NOT EXISTS `Series`
 (
     series_id INT AUTO_INCREMENT,
     content_id INT,
@@ -101,7 +95,8 @@ CREATE TABLE `Series`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Season`
+
+CREATE TABLE IF NOT EXISTS `Season`
 (
     season_id INT AUTO_INCREMENT,
     series_id INT,
@@ -111,7 +106,8 @@ CREATE TABLE `Season`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Episode`
+
+CREATE TABLE IF NOT EXISTS `Episode`
 (
     episode_id INT AUTO_INCREMENT,
     title VARCHAR(150) NOT NULL,
@@ -123,7 +119,8 @@ CREATE TABLE `Episode`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Actor`
+
+CREATE TABLE IF NOT EXISTS `Actor`
 (
     actor_id INT AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL,
@@ -134,7 +131,8 @@ CREATE TABLE `Actor`
     PRIMARY KEY (actor_id)
 );
 
-CREATE TABLE `Director`
+
+CREATE TABLE IF NOT EXISTS `Director`
 (
     director_id INT AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL,
@@ -144,7 +142,8 @@ CREATE TABLE `Director`
     PRIMARY KEY (director_id)
 );
 
-CREATE TABLE `Review`
+
+CREATE TABLE IF NOT EXISTS `Review`
 (
     review_id INT AUTO_INCREMENT,
     date_posted DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -157,7 +156,8 @@ CREATE TABLE `Review`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Content_Review`
+
+CREATE TABLE IF NOT EXISTS `Content_Review`
 (
     content_id INT,
     review_id INT,
@@ -170,7 +170,8 @@ CREATE TABLE `Content_Review`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Content_Genre`
+
+CREATE TABLE IF NOT EXISTS `Content_Genre`
 (
     content_id INT,
     genre_id INT,
@@ -183,7 +184,8 @@ CREATE TABLE `Content_Genre`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Content_Actor`
+
+CREATE TABLE IF NOT EXISTS `Content_Actor`
 (
     content_id INT,
     actor_id INT,
@@ -196,7 +198,8 @@ CREATE TABLE `Content_Actor`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Content_Director`
+
+CREATE TABLE IF NOT EXISTS `Content_Director`
 (
     content_id INT,
     director_id INT,
@@ -209,7 +212,8 @@ CREATE TABLE `Content_Director`
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `User_Metrics` (
+
+CREATE TABLE IF NOT EXISTS `User_Metrics` (
     metric_id INT AUTO_INCREMENT,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
@@ -226,7 +230,8 @@ CREATE TABLE `User_Metrics` (
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `My_List` (
+
+CREATE TABLE IF NOT EXISTS `My_List` (
     mylist_id INT AUTO_INCREMENT,
     name VARCHAR(30),
     user_id INT,
@@ -236,7 +241,8 @@ CREATE TABLE `My_List` (
         ON UPDATE CASCADE
 );
 
-CREATE TABLE `Listed_Content`
+
+CREATE TABLE IF NOT EXISTS `Listed_Content`
 (
     content_id INT,
     mylist_id INT,

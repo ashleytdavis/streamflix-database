@@ -2,7 +2,7 @@
    Streamflix Database Data Generation
    Script: data_generation.py
    Description: Generates the data for the Streamflix database.
-   Authors: Ashley Davis, Nicole Contreras, Khanh Nguyen, and Sai Kumar Reddy
+   Authors: Ashley Davis
 '''
 
 from faker import Faker
@@ -26,9 +26,14 @@ def with_db_connection(func):
             port=os.getenv('MYSQL_PORT'),
             user=os.getenv('MYSQL_USER'),
             password=os.getenv('MYSQL_PASSWORD'), 
-            database="Streamflix"
         )
         cursor = conn.cursor()
+        
+        cursor.execute("SHOW DATABASES LIKE 'Streamflix';")
+        result = cursor.fetchone()
+        if not result:
+            cursor.execute("CREATE DATABASE Streamflix;")
+        conn.database = 'Streamflix'
         try:
             result = func(conn, cursor, *args, **kwargs)
             conn.commit()
@@ -37,8 +42,9 @@ def with_db_connection(func):
             conn.rollback()
             result = None
         finally:
-            cursor.close()
-            conn.close()
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
         return result
     return wrapper
 
