@@ -31,9 +31,9 @@ def with_db_connection(func):
         
         cursor.execute("SHOW DATABASES LIKE 'Streamflix';")
         result = cursor.fetchone()
-        if not result:
-            cursor.execute("CREATE DATABASE Streamflix;")
-        conn.database = 'Streamflix'
+        if result:
+            conn.database = 'Streamflix'
+
         try:
             result = func(conn, cursor, *args, **kwargs)
             conn.commit()
@@ -59,6 +59,14 @@ def csv_to_dataframe(file_path):
 # Initializes a database at the given file path
 @with_db_connection
 def initialize_database(conn, cursor):
+    cursor.execute("SHOW DATABASES LIKE 'Streamflix';")
+    result = cursor.fetchone()
+    
+    if result:
+        cursor.execute("DROP DATABASE IF EXISTS `Streamflix`;")
+    cursor.execute("CREATE DATABASE `Streamflix`;")
+    conn.database = 'Streamflix'
+    
     with open('StreamflixDatabase/streamflix-db.sql', 'r') as sql_file:
         schema = sql_file.read()
     for result in cursor.execute(schema, multi=True):
@@ -69,56 +77,71 @@ def initialize_database(conn, cursor):
             print(f"Error processing SQL script: {err}")
             conn.rollback()
             return
-    
+        
     print("-->  Database schema initialized")
+    
+
+# Function to execute batch insertions 
+@with_db_connection
+def batch_insertion(conn, cursor, insertion_format, data):
+    try:
+        cursor.executemany(insertion_format, data)
+    except mysql.connector.Error as err:
+            print(f"Error processing SQL script: {err}")
+            conn.rollback()
+            return
 
 
 @with_db_connection
 def insert_user_data(conn, cursor):
     subscription_options = ['Family', 'Student', 'Regular']
+    user_data = []
+    profile_data = []
+    device_data = []
+    
     for i in range(100):
         username = fake.user_name()
-        password = "****"
+        password = fake.password()
         name = fake.name()
         email = fake.email()
         phone = fake.basic_phone_number().strip("()-+")
         date_of_birth = fake.date_of_birth()
         subscription_plan = subscription_options[random.randint(0, 2)]
-
-        cursor.execute('''
-            INSERT INTO User (user_id, username, password, name, email, phone, date_of_birth, subscription_plan)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ''', (i, username, password, name, email, phone, date_of_birth, subscription_plan))
         
-        insert_profile_data(cursor, i)
-        insert_device_data(cursor, i)
-            
+        user_data.append((i, username, password, name, email, phone, date_of_birth, subscription_plan))
+        
+        profile_data.extend(generate_profile_data(i))
+        device_data.extend(generate_device_data(i))
+
+    # Batch insert for User, Profile, and Device tables
+    batch_insertion('''INSERT INTO User (user_id, username, password, name, email, phone, date_of_birth, subscription_plan)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', user_data)
+
+    batch_insertion('''INSERT INTO Profile (name, user_id)
+                            VALUES (%s, %s)''', profile_data)
+
+    batch_insertion('''INSERT INTO Device (ip_address, user_id)
+                            VALUES (%s, %s)''', device_data)
             
     print("-->  User, Profile, and Device Data Generated and Populated")
 
 
-def insert_profile_data(cursor, user_id):
-    num_profiles = random.randint(1,4)
-    
-    for i in range(num_profiles):
+def generate_profile_data(user_id):
+    profile_data = []
+    num_profiles = random.randint(1, 4)
+    for _ in range(num_profiles):
         name = fake.name()
-    
-        cursor.execute('''
-            INSERT INTO Profile (name, user_id)
-            VALUES (%s, %s)
-        ''', (name, user_id))
+        profile_data.append((name, user_id))
+    return profile_data
  
 
-def insert_device_data(cursor, user_id):
-    num_devices = random.randint(1,3)
-    
-    for i in range(num_devices):
+def generate_device_data(user_id):
+    device_data = []
+    num_devices = random.randint(1, 3)
+    for _ in range(num_devices):
         ip_address = fake.ipv4()
-    
-        cursor.execute('''
-            INSERT INTO Device (ip_address, user_id)
-            VALUES (%s, %s)
-        ''', (ip_address, user_id))
+        device_data.append((ip_address, user_id))
+    return device_data
 
 
 @with_db_connection
